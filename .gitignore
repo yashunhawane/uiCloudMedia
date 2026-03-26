@@ -1,0 +1,80 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# Byte-compiled files (not relevant but standard)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds / artifacts
+dist/
+build/
+web-build/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+.expo/*
+.expo-dev-client/
+expo-env.d.ts
+
+# Testing / Coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+lerna-debug.*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Thumbs.db:*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Native / Keys
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+.kotlin/
+
+# Metro / Babel
+.metro-health-check*
+.babelrc.cache
+
+# TypeScript
+*.tsbuildinfo
+
+# Generated folders
+/ios
+/android
+app-example
