@@ -5,10 +5,12 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
 import MediaCard from '../../src/components/MediaCard';
 import { getFavorites, MediaItem } from '../../src/services/mediaService';
+import { colors, radius, shadows, spacing, typography, ui } from '../../src/Theam';
+
 
 export default function FavoritesScreen() {
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -26,11 +28,15 @@ export default function FavoritesScreen() {
       if (isLoadMore) setLoadingMore(true);
       if (isRefresh || isLoadMore) setError(null);
 
-      const { data, hasMore: more } = await getFavorites(page, 'image');
+      const targetPage = isLoadMore ? page : 1;
+      const { data, hasMore: more } = await getFavorites(targetPage);
 
       setHasMore(more);
-      setMedia(isRefresh ? data : [...media, ...data]);
-      setPage(isLoadMore ? page + 1 : 1);
+      setMedia((current) => {
+        if (isRefresh || !isLoadMore) return data;
+        return [...current, ...data];
+      });
+      setPage(isLoadMore ? targetPage + 1 : 2);
     } catch (err: any) {
       setError(err.message || 'Failed to load favorites');
       console.error('Load favorites error:', err);
@@ -39,11 +45,11 @@ export default function FavoritesScreen() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, [page, media]);
+  }, [page]);
 
   useEffect(() => {
     loadFavorites();
-  }, []);
+  }, [loadFavorites]);
 
   const onRefresh = () => loadFavorites(true);
   const onEndReached = () => {
@@ -58,40 +64,77 @@ export default function FavoritesScreen() {
 
   const renderFooter = () => {
     if (!loadingMore) return null;
-    return <ActivityIndicator style={styles.footerLoader} />;
+    return (
+      <ActivityIndicator
+        style={styles.footerLoader}
+        color={colors.primary}
+        size="small"
+      />
+    );
   };
 
+  // ── Full-screen loading state ──
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
+      <View style={[ui.screen, ui.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[ui.caption, { marginTop: spacing.md }]}>
+          Loading favourites…
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={ui.screen}>
+      {/* Decorative blobs */}
+      <View style={ui.blobTopRight} pointerEvents="none" />
+      <View style={ui.blobBottomLeft} pointerEvents="none" />
+
+      {/* Page header */}
+      <View style={styles.header}>
+        <Text style={ui.heading}>Favourites</Text>
+        <Text style={[ui.subheading, { marginTop: spacing.xs }]}>
+          Your saved collection
+        </Text>
+      </View>
+
+      {/* List */}
       <FlatList
         data={media}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
         }
         onEndReached={onEndReached}
         onEndReachedThreshold={0.1}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No favorites yet</Text>
+            {/* Small icon placeholder */}
+            <View style={styles.emptyIconWrapper}>
+              <Text style={styles.emptyIcon}>♡</Text>
+            </View>
+            <Text style={[ui.heading, styles.emptyTitle]}>Nothing here yet</Text>
+            <Text style={ui.subheading}>
+              Items you favourite will appear here.
+            </Text>
           </View>
         }
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Inline error banner */}
       {error && (
-        <View style={styles.error}>
-          <Text style={styles.errorText}>{error}</Text>
+        <View style={ui.errorBox}>
+          <Text style={ui.errorText}>{error}</Text>
         </View>
       )}
     </View>
@@ -99,41 +142,50 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
+  // ── Header ──
+  header: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing['2xl'],
+    paddingBottom: spacing.lg,
   },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
+  // ── List ──
   list: {
-    padding: 10,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing['3xl'],
+    gap: spacing.md,          // React Native 0.71+ supports gap in FlatList contentContainerStyle
   },
+
+  // ── Footer loader ──
   footerLoader: {
-    padding: 20,
+    paddingVertical: spacing.xl,
     alignSelf: 'center',
   },
+
+  // ── Empty state ──
   empty: {
-    flex: 1,
+    alignItems: 'center',
+    paddingTop: spacing['3xl'],
+    paddingHorizontal: spacing['2xl'],
+    gap: spacing.md,
+  },
+  emptyIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 50,
+    marginBottom: spacing.sm,
+    ...shadows.sm,
   },
-  emptyText: {
-    fontSize: 18,
-    color: '#666',
+  emptyIcon: {
+    fontSize: 32,
+    color: colors.primary,
   },
-  error: {
-    padding: 15,
-    backgroundColor: '#fee',
-    borderTopWidth: 1,
-    borderColor: '#fcc',
-  },
-  errorText: {
-    color: '#c33',
+  emptyTitle: {
+    // Override heading size slightly for empty state
+    fontSize: typography['2xl'],
     textAlign: 'center',
   },
 });
-

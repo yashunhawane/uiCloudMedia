@@ -39,7 +39,6 @@ export default function HomeScreen() {
   const [initialLoad, setInitialLoad] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
-  const [likedIds, setLikedIds] = useState<string[]>([]);
 
   const fabAnim = useRef(new Animated.Value(1)).current;
 
@@ -63,7 +62,20 @@ export default function HomeScreen() {
 
     try {
       const nextPage = reset ? 1 : page + 1;
+      console.log("[Home] loadMore start", {
+        reset,
+        currentPage: page,
+        nextPage,
+        hasMore,
+        currentItems: items.length,
+      });
       const result = await getMedia(nextPage);
+      console.log("[Home] loadMore result", {
+        page: nextPage,
+        received: result.data.length,
+        total: result.total,
+        hasMore: result.hasMore,
+      });
       setItems((prev) => (reset ? result.data : [...prev, ...result.data]));
       setTotal(result.total);
       setPage(nextPage);
@@ -74,7 +86,7 @@ export default function HomeScreen() {
       setLoading(false);
       setInitialLoad(false);
     }
-  }, [loading, hasMore, page]);
+  }, [loading, hasMore, page, items.length]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -84,8 +96,14 @@ export default function HomeScreen() {
   }, [loadMore]);
 
   const onEndReached = useCallback(() => {
+    console.log("[Home] onEndReached", {
+      loading,
+      hasMore,
+      page,
+      items: items.length,
+    });
     if (!loading && hasMore) loadMore();
-  }, [loading, hasMore, loadMore]);
+  }, [loading, hasMore, loadMore, page, items.length]);
 
   const openViewer = useCallback((item: MediaItem) => {
     setSelectedItem(item);
@@ -97,24 +115,14 @@ export default function HomeScreen() {
 
   const toggleLike = useCallback(async (item: MediaItem) => {
     try {
-      const updatedItem = await toggleFavorite(item.id);
-      
-      // Optimistic update first
-      setLikedIds((prev) =>
-        prev.includes(item.id)
-          ? prev.filter((id) => id !== item.id)
-          : [...prev, item.id]
-      );
-      
-      // Update items list
-      setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? updatedItem : i))
-      );
-      
+      const updatedItem = await toggleFavorite(item);
+
+      setItems((prev) => prev.map((i) => (i.id === item.id ? updatedItem : i)));
+      setSelectedItem((prev) => (prev?.id === item.id ? updatedItem : prev));
+
       console.log(`Toggled favorite for ${item.id} to ${updatedItem.isFavorite}`);
     } catch (error: any) {
       console.error("Failed to toggle favorite:", error?.response?.data || error.message);
-      // Revert optimistic update if needed, but for simplicity skip
     }
   }, []);
 
@@ -224,7 +232,7 @@ export default function HomeScreen() {
       <MediaViewer
         item={selectedItem}
         visible={!!selectedItem}
-        liked={selectedItem ? likedIds.includes(selectedItem.id) : false}
+        liked={!!selectedItem?.isFavorite}
         onClose={closeViewer}
         onToggleLike={toggleLike}
       />

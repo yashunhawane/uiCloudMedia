@@ -1,12 +1,17 @@
 import client from "./client";
 
 const handleApiError = (err: any) => {
+  const isTimeout = err.code === "ECONNABORTED";
+  const isNetworkIssue =
+    err.message === "Network Error" || !err.response;
   const message =
     err.response?.data?.message ||
     err.response?.data?.error ||
-    (err.request
-      ? "Network error. Please check your internet connection."
-      : "Something went wrong. Please try again.");
+    (isTimeout
+      ? "Server is not responding. Please try again in a moment."
+      : isNetworkIssue
+        ? "Unable to reach the server. Please make sure the backend is running."
+        : "Something went wrong. Please try again.");
 
   throw new Error(message);
 };

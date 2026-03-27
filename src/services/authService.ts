@@ -1,5 +1,5 @@
 import { loginApi, signupApi } from "../api/authApi";
-import { saveToken } from "../utils/storage";
+import { saveToken, saveUser } from "../utils/storage";
 
 export const loginUser = async (data: any) => {
   const res = await loginApi(data);
@@ -10,6 +10,16 @@ export const loginUser = async (data: any) => {
   }
 
   await saveToken(res.data.data.token);
+  const user =
+    res?.data?.data?.user ??
+    res?.data?.user ??
+    res?.data?.data?.userData ??
+    res?.data?.data?.profile;
+
+  if (user) {
+    await saveUser(user);
+  }
+
   return res.data;
 };
 

@@ -386,6 +386,34 @@ export const ui = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  mediaCardVideoPreview: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#111827",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  mediaCardVideoPlayButton: {
+    width: 54,
+    height: 54,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  mediaCardVideoPlayIcon: {
+    color: colors.textInverse,
+    fontSize: typography.lg,
+    marginLeft: 2,
+  },
+  mediaCardVideoLabel: {
+    color: colors.textInverse,
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+    letterSpacing: typography.wide,
+  },
   mediaCardOverlay: {
     position: "absolute",
     bottom: 0,
@@ -495,28 +523,6 @@ export const ui = StyleSheet.create({
   viewerMedia: {
     width: "100%",
     height: "100%",
-  },
-  viewerVideoPlaceholder: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.xl,
-  },
-  viewerVideoIcon: {
-    color: colors.textInverse,
-    fontSize: typography["4xl"],
-    marginBottom: spacing.md,
-  },
-  viewerVideoTitle: {
-    color: colors.textInverse,
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    marginBottom: spacing.sm,
-  },
-  viewerVideoHint: {
-    color: colors.overlayLight,
-    fontSize: typography.md,
-    textAlign: "center",
-    lineHeight: 22,
   },
   viewerMetaPanel: {
     paddingTop: spacing.lg,

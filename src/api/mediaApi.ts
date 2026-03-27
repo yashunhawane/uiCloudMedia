@@ -40,8 +40,8 @@ export const getImagesApi = async (page: number, limit = 20) => {
     params: { page, limit },
     headers: { Authorization: `Bearer ${token}` },
   });
-  console.log("API response:", res.data.items);
-  return res.data.items;
+  console.log("API response:", res.data);
+  return res.data;
 };
 
 // ── Toggle favorite ───────────────────────

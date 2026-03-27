@@ -1,15 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { Component } from "react";
 import {
-    Alert,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 import { colors, radius, shadows, spacing, typography, ui } from "../../src/Theam";
+import { getUser, removeToken, removeUser } from "../../src/utils/storage";
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -59,11 +60,26 @@ function InfoRow({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default class Profile extends Component {
-  state = { pressed: false };
+  state = {
+    pressed: false,
+    loading: true,
+    user: null as any,
+  };
+
+  async componentDidMount() {
+    try {
+      const user = await getUser();
+      this.setState({ user, loading: false });
+    } catch (error) {
+      console.log("Profile load error:", error);
+      this.setState({ loading: false });
+    }
+  }
 
   handleLogout = async () => {
     try {
-      await AsyncStorage.clear();
+      await removeToken();
+      await removeUser();
       Alert.alert("Logged out", "You have been signed out successfully.");
       router.replace("/(auth)/login");
     } catch (error) {
@@ -72,6 +88,20 @@ export default class Profile extends Component {
   };
 
   render() {
+    const { user, loading } = this.state;
+    const userName =
+      user?.userName ?? user?.username ?? user?.name ?? "User";
+    const email = user?.email ?? "No email available";
+    const role = user?.role ?? "USER";
+    const createdAt = user?.createdAt ?? user?.created_at;
+    const memberSince = createdAt
+      ? new Date(createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        })
+      : "Not available";
+    const avatarLetter = userName.charAt(0).toUpperCase();
+
     return (
       <SafeAreaView style={ui.screen}>
         {/* Decorative blobs */}
@@ -81,7 +111,7 @@ export default class Profile extends Component {
         <ScrollView
           contentContainerStyle={{
             padding: spacing.xl,
-            paddingBottom: spacing["4xl"],
+            paddingBottom: spacing["3xl"],
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -124,7 +154,7 @@ export default class Profile extends Component {
                   color: colors.primary,
                 }}
               >
-                Y
+                {avatarLetter}
               </Text>
             </View>
 
@@ -136,12 +166,12 @@ export default class Profile extends Component {
                 letterSpacing: typography.tight,
               }}
             >
-              yash123
+              {userName}
             </Text>
             <Text
               style={[ui.caption, { marginTop: spacing.xs }]}
             >
-              yash@gmail.com
+              {email}
             </Text>
 
             {/* Active badge */}
@@ -189,9 +219,17 @@ export default class Profile extends Component {
               Account Info
             </Text>
 
-            <InfoRow label="Username" value="yash123" />
-            <InfoRow label="Email" value="yash@gmail.com" />
-            <InfoRow label="Member since" value="Jan 2024" />
+            {loading ? (
+              <View style={{ paddingVertical: spacing.lg, alignItems: "center" }}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : (
+              <>
+                <InfoRow label="Username" value={userName} />
+                <InfoRow label="Email" value={email} />
+                <InfoRow label="Member since" value={memberSince} />
+              </>
+            )}
 
             {/* Last row — no bottom border */}
             <View
@@ -229,7 +267,7 @@ export default class Profile extends Component {
                     letterSpacing: typography.wide,
                   }}
                 >
-                  USER
+                  {String(role).toUpperCase()}
                 </Text>
               </View>
             </View>
