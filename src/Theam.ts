@@ -438,7 +438,109 @@ export const ui = StyleSheet.create({
     fontWeight: typography.medium,
   },
 
-  // ── FAB (Floating Action Button) ──
+  viewerBackdrop: {
+    flex: 1,
+    backgroundColor: colors.overlayDark,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  viewerTopBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+  },
+  viewerCloseButton: {
+    minHeight: 42,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  viewerCloseText: {
+    color: colors.textInverse,
+    fontSize: typography.md,
+    fontWeight: typography.semibold,
+  },
+  viewerLikeButton: {
+    minHeight: 42,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.full,
+    backgroundColor: colors.overlayLight,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  viewerLikeButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  viewerLikeText: {
+    color: colors.textPrimary,
+    fontSize: typography.md,
+    fontWeight: typography.semibold,
+  },
+  viewerLikeTextActive: {
+    color: colors.textInverse,
+  },
+  viewerMediaWrap: {
+    flex: 1,
+    borderRadius: radius["2xl"],
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    justifyContent: "center",
+    alignItems: "center",
+    ...shadows.lg,
+  },
+  viewerMedia: {
+    width: "100%",
+    height: "100%",
+  },
+  viewerVideoPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  viewerVideoIcon: {
+    color: colors.textInverse,
+    fontSize: typography["4xl"],
+    marginBottom: spacing.md,
+  },
+  viewerVideoTitle: {
+    color: colors.textInverse,
+    fontSize: typography.xl,
+    fontWeight: typography.bold,
+    marginBottom: spacing.sm,
+  },
+  viewerVideoHint: {
+    color: colors.overlayLight,
+    fontSize: typography.md,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  viewerMetaPanel: {
+    paddingTop: spacing.lg,
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  viewerTypeChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(255,255,255,0.16)",
+  },
+  viewerTypeChipText: {
+    color: colors.textInverse,
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+    letterSpacing: typography.wide,
+  },
+  viewerTimestampLarge: {
+    color: colors.textInverse,
+    fontSize: typography.lg,
+    fontWeight: typography.medium,
+  },
+// ── FAB (Floating Action Button) ──
   fab: {
     position: "absolute",
     bottom: spacing["2xl"],
@@ -461,3 +563,4 @@ export const ui = StyleSheet.create({
     textAlign: "center",
   },
 });
+

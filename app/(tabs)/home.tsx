@@ -3,119 +3,21 @@ import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  Dimensions,
   FlatList,
-  Image,
   RefreshControl,
   StatusBar,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
+import MediaCard from "../../src/components/MediaCard";
+import MediaViewer from "../../src/components/MediaViewer";
+import SkeletonCard, { CARD_WIDTH } from "../../src/components/SkeletonCard";
+import { getMedia, MediaItem, toggleFavorite } from "../../src/services/mediaService";
+
 import { colors, spacing, ui } from "../../src/Theam";
 
-// ─── Layout constants ─────────────────────────────────────────────────────────
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const COLUMN_GAP = spacing.sm;
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - COLUMN_GAP) / 2;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type MediaItem = {
-  id: string;
-  type: "image" | "video";
-  uri: string;
-  width: number;
-  height: number;
-  timestamp: string;
-};
-
-// ─── Static mock data (replace with real API) ────────────────────────────────
-const PAGE_SIZE = 10;
-
-const ALL_MOCK_ITEMS: MediaItem[] = Array.from({ length: 60 }, (_, i) => ({
-  id: `item-${i + 1}`,
-  type: i % 7 === 0 ? "video" : "image",
-  uri: `https://picsum.photos/seed/${i + 10}/${300 + ((i * 37) % 200)}/${300 + ((i * 53) % 200)}`,
-  width: 300 + ((i * 37) % 200),
-  height: 300 + ((i * 53) % 200),
-  timestamp: new Date(Date.now() - i * 86400000 * 2).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  }),
-}));
-
-const fetchPage = (page: number): Promise<{ data: MediaItem[]; hasMore: boolean }> =>
-  new Promise((resolve) =>
-    setTimeout(() => {
-      const start = (page - 1) * PAGE_SIZE;
-      const data = ALL_MOCK_ITEMS.slice(start, start + PAGE_SIZE);
-      resolve({ data, hasMore: start + PAGE_SIZE < ALL_MOCK_ITEMS.length });
-    }, 800)
-  );
-
-// ─── MediaCard ────────────────────────────────────────────────────────────────
-const MediaCard = React.memo(({ item }: { item: MediaItem }) => {
-  const cardHeight = CARD_WIDTH * (item.height / item.width);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.96)).current;
-
-  const onLoad = () => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 320, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 7, useNativeDriver: true }),
-    ]).start();
-  };
-
-  return (
-    <Animated.View
-      style={[
-        ui.mediaCard,
-        { width: CARD_WIDTH, height: cardHeight },
-        { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
-      ]}
-    >
-      <TouchableOpacity activeOpacity={0.9} style={{ flex: 1 }}>
-        <Image source={{ uri: item.uri }} style={ui.mediaCardImage} onLoad={onLoad} resizeMode="cover" />
-
-        <View style={ui.mediaCardOverlay} />
-
-        {item.type === "video" && (
-          <View style={ui.videoBadge}>
-            <Text style={ui.videoBadgeText}>▶</Text>
-          </View>
-        )}
-
-        <View style={ui.mediaCardMeta}>
-          <Text style={ui.mediaCardTimestamp}>{item.timestamp}</Text>
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-});
-MediaCard.displayName = "MediaCard";
-
-// ─── Skeleton Card ────────────────────────────────────────────────────────────
-const SkeletonCard = ({ height }: { height: number }) => {
-  const pulse = useRef(new Animated.Value(0.4)).current;
-
-  React.useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 700, useNativeDriver: true }),
-      ])
-    ).start();
-  }, [pulse]);
-
-  return (
-    <Animated.View
-      style={[
-        ui.mediaCard,
-        { width: CARD_WIDTH, height, opacity: pulse, backgroundColor: colors.border },
-      ]}
-    />
-  );
-};
 
 // ─── List Footer ──────────────────────────────────────────────────────────────
 const ListFooter = ({ loading }: { loading: boolean }) =>
@@ -129,17 +31,19 @@ const ListFooter = ({ loading }: { loading: boolean }) =>
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const [items, setItems] = useState<MediaItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
+  const [likedIds, setLikedIds] = useState<string[]>([]);
 
   const fabAnim = useRef(new Animated.Value(1)).current;
 
-  React.useEffect(() => {
-    loadMore(true);
-  }, []);
+  React.useEffect(() => { loadMore(true); }, [loadMore]);
 
   React.useEffect(() => {
     Animated.loop(
@@ -148,38 +52,72 @@ export default function HomeScreen() {
         Animated.timing(fabAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
       ])
     ).start();
-  }, []);
+  }, [fabAnim]);
 
-  const loadMore = useCallback(
-    async (reset = false) => {
-      if (loading) return;
-      if (!reset && !hasMore) return;
+  const loadMore = useCallback(async (reset = false) => {
+    if (loading) return;
+    if (!reset && !hasMore) return;
 
-      setLoading(true);
+    setLoading(true);
+    setError(null);
+
+    try {
       const nextPage = reset ? 1 : page + 1;
-      const result = await fetchPage(nextPage);
-
+      const result = await getMedia(nextPage);
       setItems((prev) => (reset ? result.data : [...prev, ...result.data]));
+      setTotal(result.total);
       setPage(nextPage);
       setHasMore(result.hasMore);
+    } catch {
+      setError("Failed to load media.");
+    } finally {
       setLoading(false);
       setInitialLoad(false);
-    },
-    [loading, hasMore, page]
-  );
+    }
+  }, [loading, hasMore, page]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setHasMore(true);
     await loadMore(true);
     setRefreshing(false);
-  }, []);
+  }, [loadMore]);
 
   const onEndReached = useCallback(() => {
     if (!loading && hasMore) loadMore();
   }, [loading, hasMore, loadMore]);
 
-  // Pair items into two-column rows
+  const openViewer = useCallback((item: MediaItem) => {
+    setSelectedItem(item);
+  }, []);
+
+  const closeViewer = useCallback(() => {
+    setSelectedItem(null);
+  }, []);
+
+  const toggleLike = useCallback(async (item: MediaItem) => {
+    try {
+      const updatedItem = await toggleFavorite(item.id);
+      
+      // Optimistic update first
+      setLikedIds((prev) =>
+        prev.includes(item.id)
+          ? prev.filter((id) => id !== item.id)
+          : [...prev, item.id]
+      );
+      
+      // Update items list
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? updatedItem : i))
+      );
+      
+      console.log(`Toggled favorite for ${item.id} to ${updatedItem.isFavorite}`);
+    } catch (error: any) {
+      console.error("Failed to toggle favorite:", error?.response?.data || error.message);
+      // Revert optimistic update if needed, but for simplicity skip
+    }
+  }, []);
+
   const rows: [MediaItem | null, MediaItem | null][] = [];
   for (let i = 0; i < items.length; i += 2) {
     rows.push([items[i] ?? null, items[i + 1] ?? null]);
@@ -187,8 +125,12 @@ export default function HomeScreen() {
 
   const renderRow = ({ item: row }: { item: [MediaItem | null, MediaItem | null] }) => (
     <View style={ui.gridRow}>
-      {row[0] && <MediaCard item={row[0]} />}
-      {row[1] ? <MediaCard item={row[1]} /> : <View style={{ width: CARD_WIDTH }} />}
+      {row[0] && <MediaCard item={row[0]} onPress={openViewer} />}
+      {row[1] ? (
+        <MediaCard item={row[1]} onPress={openViewer} />
+      ) : (
+        <View style={{ width: CARD_WIDTH }} />
+      )}
     </View>
   );
 
@@ -197,7 +139,6 @@ export default function HomeScreen() {
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-
       <View style={ui.blobTopRight} pointerEvents="none" />
 
       {/* Header */}
@@ -205,7 +146,7 @@ export default function HomeScreen() {
         <View>
           <Text style={ui.homeHeaderTitle}>Your Gallery</Text>
           <Text style={ui.homeHeaderSub}>
-            {items.length > 0 ? `${ALL_MOCK_ITEMS.length} memories` : "Loading…"}
+            {initialLoad ? "Loading…" : total > 0 ? `${total} memories` : "No media yet"}
           </Text>
         </View>
         <TouchableOpacity style={ui.avatarBtn} activeOpacity={0.8}>
@@ -243,10 +184,27 @@ export default function HomeScreen() {
           }
           ListEmptyComponent={
             <View style={ui.centered}>
-              <Text style={{ fontSize: 48 }}>🖼️</Text>
-              <Text style={[ui.subheading, { marginTop: spacing.md, textAlign: "center" }]}>
-                No media yet.{"\n"}Upload something!
-              </Text>
+              {error ? (
+                <>
+                  <Text style={{ fontSize: 40 }}>⚠️</Text>
+                  <Text style={[ui.subheading, { marginTop: spacing.md, textAlign: "center" }]}>
+                    {error}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => loadMore(true)}
+                    style={[ui.buttonSecondary, { marginTop: spacing.lg, paddingHorizontal: spacing.xl }]}
+                  >
+                    <Text style={ui.buttonSecondaryText}>Retry</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontSize: 48 }}>🖼️</Text>
+                  <Text style={[ui.subheading, { marginTop: spacing.md, textAlign: "center" }]}>
+                    No media yet.{"\n"}Upload something!
+                  </Text>
+                </>
+              )}
             </View>
           }
         />
@@ -257,11 +215,19 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={ui.fabBtn}
           activeOpacity={0.85}
-          onPress={() => router.push("/(tabs)/upload")}
+          onPress={() => router.push("/imageUpload/upload")}
         >
           <Text style={ui.fabIcon}>+</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      <MediaViewer
+        item={selectedItem}
+        visible={!!selectedItem}
+        liked={selectedItem ? likedIds.includes(selectedItem.id) : false}
+        onClose={closeViewer}
+        onToggleLike={toggleLike}
+      />
     </View>
   );
 }

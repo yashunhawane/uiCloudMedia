@@ -1,1 +1,0 @@
-# Improve login UI + add signup button&#10;&#10;## Steps:&#10;1. [x] Create TODO.md&#10;2. [ ] Update app/(auth)/login.tsx with modern UI (SafeAreaView, styles, loading, error, signup link)&#10;3. [ ] Test UI (run expo start manually)&#10;4. [ ] Complete task
