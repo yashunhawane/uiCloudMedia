@@ -1,6 +1,11 @@
 import * as SecureStore from "expo-secure-store";
 
 const memoryStorage = new Map<string, string>();
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
+const AUTH_EXPIRES_AT_KEY = "authExpiresAt";
+
+export const SESSION_DURATION_MS = 60 * 60 * 1000;
 
 const isMissingNativeStorageError = (error: unknown) => {
   if (!(error instanceof Error)) {
@@ -61,23 +66,32 @@ const removeItem = async (key: string) => {
 };
 
 export const saveToken = async (token: string) => {
-  await setItem("token", token);
+  await setItem(TOKEN_KEY, token);
+  await setItem(AUTH_EXPIRES_AT_KEY, String(Date.now() + SESSION_DURATION_MS));
 };
 
 export const getToken = async () => {
-  return getItem("token");
+  const expiresAt = await getTokenExpiry();
+
+  if (expiresAt && Date.now() >= expiresAt) {
+    await clearAuthData();
+    return null;
+  }
+
+  return getItem(TOKEN_KEY);
 };
 
 export const removeToken = async () => {
-  return removeItem("token");
+  await removeItem(TOKEN_KEY);
+  await removeItem(AUTH_EXPIRES_AT_KEY);
 };
 
 export const saveUser = async (user: unknown) => {
-  await setItem("user", JSON.stringify(user));
+  await setItem(USER_KEY, JSON.stringify(user));
 };
 
 export const getUser = async () => {
-  const user = await getItem("user");
+  const user = await getItem(USER_KEY);
   if (!user) {
     return null;
   }
@@ -91,5 +105,24 @@ export const getUser = async () => {
 };
 
 export const removeUser = async () => {
-  return removeItem("user");
+  return removeItem(USER_KEY);
+};
+
+export const getTokenExpiry = async () => {
+  const expiresAt = await getItem(AUTH_EXPIRES_AT_KEY);
+
+  if (!expiresAt) {
+    return null;
+  }
+
+  const parsedExpiry = Number(expiresAt);
+  return Number.isNaN(parsedExpiry) ? null : parsedExpiry;
+};
+
+export const clearAuthData = async () => {
+  await Promise.all([
+    removeItem(TOKEN_KEY),
+    removeItem(USER_KEY),
+    removeItem(AUTH_EXPIRES_AT_KEY),
+  ]);
 };

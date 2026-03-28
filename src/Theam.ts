@@ -207,7 +207,7 @@ export const ui = StyleSheet.create({
   },
   buttonSecondaryText: {
     color: colors.textPrimary,
-    fontSize: typography.lg,
+    fontSize: typography.md,
     fontWeight: typography.semibold,
     letterSpacing: typography.normal,
   },

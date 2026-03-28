@@ -1,50 +1,132 @@
-# Welcome to your Expo app 👋
+# Cloud Media
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Cloud Media is an Expo Router mobile app for authenticated media browsing and uploads. Users can sign up, log in, view their gallery, mark items as favourites, upload photos or videos, and inspect their profile from a tab-based interface.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Email/password authentication with signup and login screens
+- Secure token storage using `expo-secure-store`
+- Automatic session expiry handling
+- Media gallery with paginated loading
+- Local media caching fallback when gallery fetch fails
+- Favourite toggle support
+- Upload flow for images and videos from camera or gallery
+- Profile screen backed by stored user data
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+- Expo SDK 54
+- React Native 0.81
+- React 19
+- Expo Router
+- Axios
+- TypeScript
+- AsyncStorage
+- Expo Image Picker
+- Expo Secure Store
+- Expo Video
 
-   ```bash
-   npx expo start
-   ```
+## Project Structure
 
-In the output, you'll find options to open the app in a
+```text
+app/
+  (auth)/
+    login.tsx
+    signup.tsx
+  (tabs)/
+    home.tsx
+    favorites.tsx
+    profile.tsx
+    _layout.tsx
+  imageUpload/
+    upload.tsx
+  _layout.tsx
+  index.tsx
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+src/
+  api/
+  components/
+  services/
+  utils/
+  Theam.ts
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## App Flow
 
-## Learn more
+1. `app/index.tsx` checks whether a token exists.
+2. Authenticated users are redirected to `/home`.
+3. Unauthenticated users are redirected to `/login`.
+4. The root layout monitors token expiry and clears auth data when the session ends.
 
-To learn more about developing your project with Expo, look at the following resources:
+## API Configuration
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+The app currently uses a hardcoded backend base URL in [src/api/client.ts](/c:/Users/DELL/Desktop/yash/CloudMedia/uiCloudMedia/cloud-media/src/api/client.ts):
 
-## Join the community
+```ts
+http://3.110.216.101:3000/api/
+```
 
-Join our community of developers creating universal apps.
+Available API usage in the project:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `POST /auth/signup`
+- `POST /auth/login`
+- `GET /media/getimages`
+- `GET /media/favorites`
+- `PUT /media/:mediaId/favorite`
+- `POST /media/upload`
+
+## Session Handling
+
+- Tokens are stored with `expo-secure-store`
+- User data is stored alongside the token
+- Session duration is currently set to 1 hour in [src/utils/storage.ts](/c:/Users/DELL/Desktop/yash/CloudMedia/uiCloudMedia/cloud-media/src/utils/storage.ts)
+- On `401` responses from protected routes, auth data is cleared and the user is sent back to login
+
+## Upload Behavior
+
+- Users can capture media with the camera or select it from the gallery
+- The upload screen supports images and videos
+- File size is limited to 5 MB in the UI
+- Uploads are sent as `multipart/form-data`
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm
+- Expo Go app or Android/iOS simulator
+
+### Install
+
+```bash
+npm install
+```
+
+### Run the app
+
+```bash
+npm start
+```
+
+Useful scripts:
+
+```bash
+npm run android
+npm run ios
+npm run web
+npm run lint
+```
+
+## Notes
+
+- The backend URL is hardcoded, so if the API host changes you will need to update [src/api/client.ts](/c:/Users/DELL/Desktop/yash/CloudMedia/uiCloudMedia/cloud-media/src/api/client.ts).
+- The repository still includes the default Expo `reset-project` script in `package.json`, but the supporting `scripts/` folder is not present in this project.
+- Some files contain encoding artifacts in UI text/comments from earlier edits; this README reflects project behavior rather than those display issues.
+
+## Future Improvements
+
+- Move API base URL to environment-based config
+- Add proper pagination metadata handling for favourites
+- Add tests for auth, upload, and caching flows
+- Improve media validation and upload feedback

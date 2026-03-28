@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { colors, radius, shadows, spacing, typography, ui } from "../../src/Theam";
-import { getUser, removeToken, removeUser } from "../../src/utils/storage";
+import { clearAuthData, getUser } from "../../src/utils/storage";
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -78,8 +78,7 @@ export default class Profile extends Component {
 
   handleLogout = async () => {
     try {
-      await removeToken();
-      await removeUser();
+      await clearAuthData();
       Alert.alert("Logged out", "You have been signed out successfully.");
       router.replace("/(auth)/login");
     } catch (error) {
